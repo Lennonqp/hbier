@@ -179,6 +179,26 @@
     font-weight: 700;
     color: var(--acento);
     font-size: 16px;
+    cursor: pointer;
+    border-radius: 6px;
+    padding: 2px 4px;
+  }
+
+  .pontos:hover {
+    background: #eee7d4;
+  }
+
+  .pontos-input {
+    width: 44px;
+    min-width: 44px;
+    text-align: center;
+    font-weight: 700;
+    color: var(--acento);
+    font-size: 16px;
+    border: 1px solid var(--acento);
+    border-radius: 6px;
+    padding: 2px 4px;
+    outline: none;
   }
 
   .remover {
@@ -310,7 +330,7 @@
           <div class="controles-pontos">
             <button class="btn-acertou" title="Acertou (+1 ponto)">Acertou +1</button>
             <button class="btn-cravou" title="Cravou (+3 pontos)">Cravou +3</button>
-            <span class="pontos">${p.pontos}</span>
+            <span class="pontos" title="Clique para editar manualmente">${p.pontos}</span>
           </div>
           <button class="remover" title="Remover participante">remover</button>
         </li>`)
@@ -367,7 +387,10 @@
     const p = participantes.find((x) => x.id === id);
     if (!p) return;
     const novoValor = Math.max(0, p.pontos + delta);
+    await salvarPontos(id, novoValor);
+  }
 
+  async function salvarPontos(id, novoValor) {
     try {
       const dados = await chamarApi({
         method: 'PATCH',
@@ -378,7 +401,51 @@
       renderizar();
     } catch (erro) {
       mostrarErro(erro.message);
+      renderizar();
     }
+  }
+
+  function editarPontosManualmente(span) {
+    const li = span.closest('.participante');
+    const id = li.dataset.id;
+    const valorAtual = span.textContent.trim();
+
+    const input = document.createElement('input');
+    input.type = 'number';
+    input.min = '0';
+    input.value = valorAtual;
+    input.className = 'pontos-input';
+
+    span.replaceWith(input);
+    input.focus();
+    input.select();
+
+    let jaTratado = false;
+
+    function confirmar() {
+      if (jaTratado) return;
+      jaTratado = true;
+
+      const novoValor = parseInt(input.value, 10);
+      if (isNaN(novoValor) || novoValor < 0) {
+        mostrarErro('Digite um número válido (0 ou maior).');
+        renderizar();
+        return;
+      }
+      salvarPontos(id, novoValor);
+    }
+
+    input.addEventListener('blur', confirmar);
+    input.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        input.blur();
+      }
+      if (e.key === 'Escape') {
+        jaTratado = true;
+        renderizar();
+      }
+    });
   }
 
   async function removerParticipante(id) {
@@ -422,6 +489,7 @@
     if (e.target.classList.contains('btn-acertou')) alterarPontos(id, 1);
     if (e.target.classList.contains('btn-cravou')) alterarPontos(id, 3);
     if (e.target.classList.contains('remover')) removerParticipante(id);
+    if (e.target.classList.contains('pontos')) editarPontosManualmente(e.target);
   });
 
   carregar();
