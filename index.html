@@ -1,0 +1,423 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Bolão da Box</title>
+<style>
+  :root {
+    --verde-escuro: #0d2818;
+    --verde-campo: #143d24;
+    --creme: #f4f0e4;
+    --texto-escuro: #2b2b24;
+    --acento: #1c5c38;
+    --acento-hover: #154a2c;
+    --erro: #b3422f;
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    margin: 0;
+    min-height: 100vh;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    background:
+      repeating-linear-gradient(
+        90deg,
+        var(--verde-campo) 0px,
+        var(--verde-campo) 60px,
+        var(--verde-escuro) 60px,
+        var(--verde-escuro) 120px
+      );
+    color: var(--texto-escuro);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 32px 16px 64px;
+  }
+
+  header {
+    text-align: center;
+    margin-bottom: 24px;
+  }
+
+  h1 {
+    color: var(--creme);
+    font-size: clamp(28px, 6vw, 44px);
+    letter-spacing: 2px;
+    margin: 0 0 6px;
+    text-transform: uppercase;
+    -webkit-text-stroke: 1px rgba(0,0,0,0.15);
+  }
+
+  .legenda {
+    color: rgba(244,240,228,0.85);
+    font-size: 14px;
+    margin: 0;
+  }
+
+  main {
+    background: var(--creme);
+    border-radius: 16px;
+    padding: 28px;
+    max-width: 560px;
+    width: 100%;
+    box-shadow: 0 12px 30px rgba(0,0,0,0.35);
+  }
+
+  .form-linha {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 8px;
+  }
+
+  input[type="text"] {
+    flex: 1;
+    padding: 12px 14px;
+    border-radius: 10px;
+    border: 1px solid #cfc8b3;
+    font-size: 15px;
+    outline: none;
+  }
+
+  input[type="text"]:focus {
+    border-color: var(--acento);
+    box-shadow: 0 0 0 3px rgba(28,92,56,0.15);
+  }
+
+  button {
+    cursor: pointer;
+    border: none;
+    border-radius: 10px;
+    font-weight: 600;
+    font-size: 15px;
+    transition: background 0.15s ease, opacity 0.15s ease;
+  }
+
+  .btn-principal {
+    background: var(--acento);
+    color: var(--creme);
+    padding: 12px 20px;
+    white-space: nowrap;
+  }
+
+  .btn-principal:hover { background: var(--acento-hover); }
+  .btn-principal:disabled { opacity: 0.6; cursor: not-allowed; }
+
+  .status-msg {
+    min-height: 18px;
+    font-size: 13px;
+    margin: 0 0 16px;
+  }
+
+  .status-msg.erro { color: var(--erro); }
+  .status-msg.ok { color: var(--acento); }
+
+  .lista-vazia {
+    text-align: center;
+    padding: 32px 16px;
+    border: 1px dashed #cfc8b3;
+    border-radius: 12px;
+    color: #7a7464;
+    font-size: 14px;
+  }
+
+  ul#lista {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .participante {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    background: #fff;
+    border: 1px solid #e6e1d2;
+    border-radius: 10px;
+    padding: 10px 14px;
+  }
+
+  .nome {
+    font-weight: 600;
+    flex: 1;
+    word-break: break-word;
+  }
+
+  .controles-pontos {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .controles-pontos button {
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    background: #eee7d4;
+    color: var(--texto-escuro);
+    font-size: 16px;
+    line-height: 1;
+  }
+
+  .controles-pontos button:hover { background: #e0d8bf; }
+
+  .pontos {
+    min-width: 28px;
+    text-align: center;
+    font-weight: 700;
+    color: var(--acento);
+  }
+
+  .remover {
+    background: transparent;
+    color: #b3422f;
+    font-size: 13px;
+    padding: 4px 8px;
+  }
+
+  .remover:hover { text-decoration: underline; }
+
+  footer {
+    margin-top: 18px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+  }
+
+  .info-rodape {
+    font-size: 12.5px;
+    color: #7a7464;
+    line-height: 1.4;
+  }
+
+  .zerar {
+    background: transparent;
+    color: #b3422f;
+    font-size: 13px;
+    text-decoration: underline;
+    padding: 4px;
+  }
+
+  .carregando {
+    text-align: center;
+    padding: 24px;
+    color: #7a7464;
+    font-size: 14px;
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>Bolão da Box</h1>
+  <p class="legenda">Cravou vale 3 · Ganhou vale 1</p>
+</header>
+
+<main>
+  <div class="form-linha">
+    <input type="text" id="campoNome" placeholder="Nome do participante" maxlength="40" />
+    <button class="btn-principal" id="btnAdicionar">Adicionar</button>
+  </div>
+  <p class="status-msg" id="statusMsg"></p>
+
+  <div id="conteudo">
+    <div class="carregando">Carregando placar...</div>
+  </div>
+
+  <footer>
+    <p class="info-rodape">Os pontos ficam salvos automaticamente e qualquer<br>pessoa que abrir este bolão vê o mesmo placar.</p>
+    <button class="zerar" id="btnZerar">Zerar placar</button>
+  </footer>
+</main>
+
+<script>
+  const API = '/api/participantes';
+
+  const campoNome = document.getElementById('campoNome');
+  const btnAdicionar = document.getElementById('btnAdicionar');
+  const btnZerar = document.getElementById('btnZerar');
+  const conteudo = document.getElementById('conteudo');
+  const statusMsg = document.getElementById('statusMsg');
+
+  let participantes = [];
+
+  function mostrarErro(msg) {
+    statusMsg.textContent = msg;
+    statusMsg.className = 'status-msg erro';
+  }
+
+  function limparMsg() {
+    statusMsg.textContent = '';
+    statusMsg.className = 'status-msg';
+  }
+
+  async function chamarApi(opcoes = {}) {
+    let resposta;
+    try {
+      resposta = await fetch(API, {
+        headers: { 'Content-Type': 'application/json' },
+        ...opcoes,
+      });
+    } catch (erroRede) {
+      throw new Error('Não foi possível conectar ao servidor. Verifique sua internet e tente de novo.');
+    }
+
+    let dados = null;
+    try {
+      dados = await resposta.json();
+    } catch (_) {
+      // resposta sem corpo JSON
+    }
+
+    if (!resposta.ok) {
+      const detalhe = dados && dados.error ? dados.error : `Erro ${resposta.status} ao falar com o servidor.`;
+      throw new Error(detalhe);
+    }
+
+    return dados;
+  }
+
+  function renderizar() {
+    if (!participantes.length) {
+      conteudo.innerHTML = `
+        <div class="lista-vazia">
+          Ainda não tem ninguém no bolão.<br>Adicione o primeiro participante acima.
+        </div>`;
+      return;
+    }
+
+    const itens = participantes
+      .slice()
+      .sort((a, b) => b.pontos - a.pontos)
+      .map((p) => `
+        <li class="participante" data-id="${p.id}">
+          <span class="nome">${escapeHtml(p.nome)}</span>
+          <div class="controles-pontos">
+            <button class="menos" title="Remover ponto">−</button>
+            <span class="pontos">${p.pontos}</span>
+            <button class="mais" title="Adicionar ponto">+</button>
+          </div>
+          <button class="remover" title="Remover participante">remover</button>
+        </li>`)
+      .join('');
+
+    conteudo.innerHTML = `<ul id="lista">${itens}</ul>`;
+  }
+
+  function escapeHtml(texto) {
+    const div = document.createElement('div');
+    div.textContent = texto;
+    return div.innerHTML;
+  }
+
+  async function carregar() {
+    try {
+      const dados = await chamarApi();
+      participantes = dados.participantes || [];
+      limparMsg();
+      renderizar();
+    } catch (erro) {
+      conteudo.innerHTML = '';
+      mostrarErro(erro.message);
+    }
+  }
+
+  async function adicionar() {
+    const nome = campoNome.value.trim();
+    if (!nome) {
+      mostrarErro('Digite um nome antes de adicionar.');
+      return;
+    }
+
+    btnAdicionar.disabled = true;
+    limparMsg();
+
+    try {
+      const dados = await chamarApi({
+        method: 'POST',
+        body: JSON.stringify({ nome }),
+      });
+      participantes = dados.participantes || [];
+      campoNome.value = '';
+      renderizar();
+    } catch (erro) {
+      mostrarErro(erro.message);
+    } finally {
+      btnAdicionar.disabled = false;
+      campoNome.focus();
+    }
+  }
+
+  async function alterarPontos(id, delta) {
+    const p = participantes.find((x) => x.id === id);
+    if (!p) return;
+    const novoValor = Math.max(0, p.pontos + delta);
+
+    try {
+      const dados = await chamarApi({
+        method: 'PATCH',
+        body: JSON.stringify({ id, pontos: novoValor }),
+      });
+      participantes = dados.participantes || [];
+      limparMsg();
+      renderizar();
+    } catch (erro) {
+      mostrarErro(erro.message);
+    }
+  }
+
+  async function removerParticipante(id) {
+    try {
+      const dados = await chamarApi({
+        method: 'DELETE',
+        body: JSON.stringify({ id }),
+      });
+      participantes = dados.participantes || [];
+      limparMsg();
+      renderizar();
+    } catch (erro) {
+      mostrarErro(erro.message);
+    }
+  }
+
+  async function zerarPlacar() {
+    if (!confirm('Tem certeza que quer zerar o placar de todo mundo?')) return;
+
+    try {
+      const dados = await chamarApi({ method: 'DELETE', body: JSON.stringify({}) });
+      participantes = dados.participantes || [];
+      limparMsg();
+      renderizar();
+    } catch (erro) {
+      mostrarErro(erro.message);
+    }
+  }
+
+  btnAdicionar.addEventListener('click', adicionar);
+  campoNome.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') adicionar();
+  });
+  btnZerar.addEventListener('click', zerarPlacar);
+
+  conteudo.addEventListener('click', (e) => {
+    const li = e.target.closest('.participante');
+    if (!li) return;
+    const id = li.dataset.id;
+
+    if (e.target.classList.contains('mais')) alterarPontos(id, 1);
+    if (e.target.classList.contains('menos')) alterarPontos(id, -1);
+    if (e.target.classList.contains('remover')) removerParticipante(id);
+  });
+
+  carregar();
+</script>
+
+</body>
+</html>
