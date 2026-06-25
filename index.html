@@ -140,6 +140,7 @@
     border: 1px solid #e6e1d2;
     border-radius: 10px;
     padding: 10px 14px;
+    flex-wrap: wrap;
   }
 
   .nome {
@@ -151,26 +152,33 @@
   .controles-pontos {
     display: flex;
     align-items: center;
-    gap: 8px;
+    gap: 6px;
+    flex-wrap: wrap;
   }
 
-  .controles-pontos button {
-    width: 30px;
-    height: 30px;
-    border-radius: 50%;
-    background: #eee7d4;
-    color: var(--texto-escuro);
-    font-size: 16px;
-    line-height: 1;
+  .btn-acertou,
+  .btn-cravou {
+    padding: 7px 12px;
+    font-size: 13px;
+    color: var(--creme);
   }
 
-  .controles-pontos button:hover { background: #e0d8bf; }
+  .btn-acertou {
+    background: #4a7a5a;
+  }
+  .btn-acertou:hover { background: #3d6549; }
+
+  .btn-cravou {
+    background: var(--acento);
+  }
+  .btn-cravou:hover { background: var(--acento-hover); }
 
   .pontos {
-    min-width: 28px;
+    min-width: 34px;
     text-align: center;
     font-weight: 700;
     color: var(--acento);
+    font-size: 16px;
   }
 
   .remover {
@@ -300,9 +308,9 @@
         <li class="participante" data-id="${p.id}">
           <span class="nome">${escapeHtml(p.nome)}</span>
           <div class="controles-pontos">
-            <button class="menos" title="Remover ponto">−</button>
+            <button class="btn-acertou" title="Acertou (+1 ponto)">Acertou +1</button>
+            <button class="btn-cravou" title="Cravou (+3 pontos)">Cravou +3</button>
             <span class="pontos">${p.pontos}</span>
-            <button class="mais" title="Adicionar ponto">+</button>
           </div>
           <button class="remover" title="Remover participante">remover</button>
         </li>`)
@@ -411,8 +419,8 @@
     if (!li) return;
     const id = li.dataset.id;
 
-    if (e.target.classList.contains('mais')) alterarPontos(id, 1);
-    if (e.target.classList.contains('menos')) alterarPontos(id, -1);
+    if (e.target.classList.contains('btn-acertou')) alterarPontos(id, 1);
+    if (e.target.classList.contains('btn-cravou')) alterarPontos(id, 3);
     if (e.target.classList.contains('remover')) removerParticipante(id);
   });
 
