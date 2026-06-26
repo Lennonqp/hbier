@@ -219,6 +219,14 @@
     flex-wrap: wrap;
   }
 
+  .ver-ranking {
+    background: transparent;
+    color: var(--acento);
+    font-size: 13px;
+    text-decoration: underline;
+    font-weight: 600;
+  }
+
   .info-rodape {
     font-size: 12.5px;
     color: #7a7464;
@@ -261,7 +269,10 @@
 
   <footer>
     <p class="info-rodape">Os pontos ficam salvos automaticamente e qualquer<br>pessoa que abrir este bolão vê o mesmo placar.</p>
-    <button class="zerar" id="btnZerar">Zerar placar</button>
+    <div style="display:flex; gap:14px; align-items:center;">
+      <a class="ver-ranking" href="ranking.html">Ver ranking →</a>
+      <button class="zerar" id="btnZerar">Zerar placar</button>
+    </div>
   </footer>
 </main>
 
@@ -323,7 +334,7 @@
 
     const itens = participantes
       .slice()
-      .sort((a, b) => b.pontos - a.pontos)
+      .sort((a, b) => a.nome.localeCompare(b.nome, 'pt-BR', { sensitivity: 'base' }))
       .map((p) => `
         <li class="participante" data-id="${p.id}">
           <span class="nome">${escapeHtml(p.nome)}</span>
