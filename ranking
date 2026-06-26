@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Ranking - Bolão da Box</title>
+<style>
+  :root {
+    --verde-escuro: #0d2818;
+    --verde-campo: #143d24;
+    --creme: #f4f0e4;
+    --texto-escuro: #2b2b24;
+    --acento: #1c5c38;
+    --acento-hover: #154a2c;
+    --erro: #b3422f;
+    --ouro: #c9a227;
+    --prata: #9aa0a6;
+    --bronze: #b5702f;
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    margin: 0;
+    min-height: 100vh;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    background:
+      repeating-linear-gradient(
+        90deg,
+        var(--verde-campo) 0px,
+        var(--verde-campo) 60px,
+        var(--verde-escuro) 60px,
+        var(--verde-escuro) 120px
+      );
+    color: var(--texto-escuro);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 32px 16px 64px;
+  }
+
+  header {
+    text-align: center;
+    margin-bottom: 24px;
+  }
+
+  h1 {
+    color: var(--creme);
+    font-size: clamp(28px, 6vw, 44px);
+    letter-spacing: 2px;
+    margin: 0 0 6px;
+    text-transform: uppercase;
+    -webkit-text-stroke: 1px rgba(0,0,0,0.15);
+  }
+
+  .legenda {
+    color: rgba(244,240,228,0.85);
+    font-size: 14px;
+    margin: 0;
+  }
+
+  main {
+    background: var(--creme);
+    border-radius: 16px;
+    padding: 28px;
+    max-width: 560px;
+    width: 100%;
+    box-shadow: 0 12px 30px rgba(0,0,0,0.35);
+  }
+
+  .lista-vazia, .carregando {
+    text-align: center;
+    padding: 32px 16px;
+    border: 1px dashed #cfc8b3;
+    border-radius: 12px;
+    color: #7a7464;
+    font-size: 14px;
+  }
+
+  .status-msg {
+    min-height: 18px;
+    font-size: 13px;
+    margin: 0 0 12px;
+  }
+  .status-msg.erro { color: var(--erro); }
+
+  ul#lista {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .linha-rank {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    background: #fff;
+    border: 1px solid #e6e1d2;
+    border-radius: 10px;
+    padding: 12px 16px;
+  }
+
+  .posicao {
+    width: 30px;
+    text-align: center;
+    font-weight: 800;
+    font-size: 16px;
+    color: #7a7464;
+    flex-shrink: 0;
+  }
+
+  .linha-rank.top1 .posicao { color: var(--ouro); }
+  .linha-rank.top2 .posicao { color: var(--prata); }
+  .linha-rank.top3 .posicao { color: var(--bronze); }
+
+  .medalha {
+    font-size: 18px;
+    width: 22px;
+    text-align: center;
+    flex-shrink: 0;
+  }
+
+  .nome-rank {
+    flex: 1;
+    font-weight: 600;
+    word-break: break-word;
+  }
+
+  .pontos-rank {
+    font-weight: 800;
+    font-size: 17px;
+    color: var(--acento);
+    min-width: 28px;
+    text-align: right;
+  }
+
+  footer {
+    margin-top: 18px;
+    text-align: center;
+  }
+
+  .voltar {
+    color: var(--acento);
+    font-size: 13px;
+    text-decoration: underline;
+    font-weight: 600;
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>Ranking</h1>
+  <p class="legenda">Bolão da Box · Cravou vale 3 · Acertou vale 1</p>
+</header>
+
+<main>
+  <p class="status-msg" id="statusMsg"></p>
+  <div id="conteudo">
+    <div class="carregando">Carregando ranking...</div>
+  </div>
+
+  <footer>
+    <a class="voltar" href="index.html">← Voltar para o bolão</a>
+  </footer>
+</main>
+
+<script>
+  const API = '/api/participantes';
+  const conteudo = document.getElementById('conteudo');
+  const statusMsg = document.getElementById('statusMsg');
+
+  function mostrarErro(msg) {
+    statusMsg.textContent = msg;
+    statusMsg.className = 'status-msg erro';
+  }
+
+  function escapeHtml(texto) {
+    const div = document.createElement('div');
+    div.textContent = texto;
+    return div.innerHTML;
+  }
+
+  const medalhas = ['🥇', '🥈', '🥉'];
+
+  function renderizar(participantes) {
+    if (!participantes.length) {
+      conteudo.innerHTML = `
+        <div class="lista-vazia">
+          Ainda não tem ninguém no bolão.<br>Volte e adicione participantes para ver o ranking.
+        </div>`;
+      return;
+    }
+
+    // Ordena por pontos (maior para menor); em caso de empate, ordena por nome (A-Z)
+    const ordenados = participantes.slice().sort((a, b) => {
+      if (b.pontos !== a.pontos) return b.pontos - a.pontos;
+      return a.nome.localeCompare(b.nome, 'pt-BR', { sensitivity: 'base' });
+    });
+
+    const itens = ordenados.map((p, i) => {
+      const posicao = i + 1;
+      const classeTop = posicao <= 3 ? `top${posicao}` : '';
+      const medalha = posicao <= 3 ? medalhas[posicao - 1] : '';
+      return `
+        <li class="linha-rank ${classeTop}">
+          <span class="posicao">${posicao}º</span>
+          <span class="medalha">${medalha}</span>
+          <span class="nome-rank">${escapeHtml(p.nome)}</span>
+          <span class="pontos-rank">${p.pontos}</span>
+        </li>`;
+    }).join('');
+
+    conteudo.innerHTML = `<ul id="lista">${itens}</ul>`;
+  }
+
+  async function carregar() {
+    try {
+      const resposta = await fetch(API);
+      const dados = await resposta.json();
+
+      if (!resposta.ok) {
+        throw new Error(dados && dados.error ? dados.error : `Erro ${resposta.status} ao carregar o ranking.`);
+      }
+
+      renderizar(dados.participantes || []);
+    } catch (erro) {
+      conteudo.innerHTML = '';
+      mostrarErro(erro.message || 'Não foi possível carregar o ranking agora.');
+    }
+  }
+
+  carregar();
+</script>
+
+</body>
+</html>
