@@ -148,6 +148,33 @@
     text-decoration: underline;
     font-weight: 600;
   }
+
+  .acoes {
+    margin-top: 20px;
+    display: flex;
+    justify-content: center;
+  }
+
+  .btn-copiar {
+    cursor: pointer;
+    border: none;
+    border-radius: 10px;
+    background: var(--acento);
+    color: var(--creme);
+    font-weight: 600;
+    font-size: 14px;
+    padding: 12px 22px;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    transition: background 0.15s ease;
+  }
+
+  .btn-copiar:hover { background: var(--acento-hover); }
+
+  .btn-copiar.copiado {
+    background: #3d6549;
+  }
 </style>
 </head>
 <body>
@@ -163,6 +190,10 @@
     <div class="carregando">Carregando ranking...</div>
   </div>
 
+  <div class="acoes">
+    <button class="btn-copiar" id="btnCopiar">📋 Copiar para o grupo</button>
+  </div>
+
   <footer>
     <a class="voltar" href="index.html">← Voltar para o bolão</a>
   </footer>
@@ -172,6 +203,9 @@
   const API = '/api/participantes';
   const conteudo = document.getElementById('conteudo');
   const statusMsg = document.getElementById('statusMsg');
+  const btnCopiar = document.getElementById('btnCopiar');
+
+  let ultimoRanking = [];
 
   function mostrarErro(msg) {
     statusMsg.textContent = msg;
@@ -185,6 +219,25 @@
   }
 
   const medalhas = ['🥇', '🥈', '🥉'];
+
+  // Calcula a posição de cada participante considerando empates.
+  // Quem tem a mesma pontuação fica na mesma posição, e a próxima posição
+  // "salta" o número de pessoas empatadas (ex: 2 pessoas em 1º -> próximo é 3º).
+  function calcularPosicoes(ordenados) {
+    const comPosicao = [];
+    let posicaoAtual = 0;
+    let pontosAnteriores = null;
+
+    ordenados.forEach((p, i) => {
+      if (pontosAnteriores === null || p.pontos !== pontosAnteriores) {
+        posicaoAtual = i + 1;
+        pontosAnteriores = p.pontos;
+      }
+      comPosicao.push({ ...p, posicao: posicaoAtual });
+    });
+
+    return comPosicao;
+  }
 
   function renderizar(participantes) {
     if (!participantes.length) {
@@ -201,8 +254,11 @@
       return a.nome.localeCompare(b.nome, 'pt-BR', { sensitivity: 'base' });
     });
 
-    const itens = ordenados.map((p, i) => {
-      const posicao = i + 1;
+    const comPosicao = calcularPosicoes(ordenados);
+    ultimoRanking = comPosicao;
+
+    const itens = comPosicao.map((p) => {
+      const posicao = p.posicao;
       const classeTop = posicao <= 3 ? `top${posicao}` : '';
       const medalha = posicao <= 3 ? medalhas[posicao - 1] : '';
       return `
@@ -216,6 +272,69 @@
 
     conteudo.innerHTML = `<ul id="lista">${itens}</ul>`;
   }
+
+  function montarTextoRanking() {
+    if (!ultimoRanking.length) return 'Ainda não tem ninguém no bolão.';
+
+    const medalhasTexto = ['🥇', '🥈', '🥉'];
+    const linhas = ultimoRanking.map((p) => {
+      const posicao = p.posicao;
+      const medalha = posicao <= 3 ? medalhasTexto[posicao - 1] + ' ' : `${posicao}º `;
+      return `${medalha}${p.nome} — ${p.pontos} pts`;
+    });
+
+    return `🏆 *Ranking do Bolão da Box*\n\n${linhas.join('\n')}`;
+  }
+
+  function copiarTextoFallback(texto) {
+    const textarea = document.createElement('textarea');
+    textarea.value = texto;
+    textarea.style.position = 'fixed';
+    textarea.style.opacity = '0';
+    document.body.appendChild(textarea);
+    textarea.focus();
+    textarea.select();
+    let sucesso = false;
+    try {
+      sucesso = document.execCommand('copy');
+    } catch (_) {
+      sucesso = false;
+    }
+    document.body.removeChild(textarea);
+    return sucesso;
+  }
+
+  async function copiarRanking() {
+    const texto = montarTextoRanking();
+    let copiou = false;
+
+    try {
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        await navigator.clipboard.writeText(texto);
+        copiou = true;
+      }
+    } catch (_) {
+      copiou = false;
+    }
+
+    if (!copiou) {
+      copiou = copiarTextoFallback(texto);
+    }
+
+    if (copiou) {
+      const textoOriginal = btnCopiar.textContent;
+      btnCopiar.textContent = '✅ Copiado!';
+      btnCopiar.classList.add('copiado');
+      setTimeout(() => {
+        btnCopiar.textContent = textoOriginal;
+        btnCopiar.classList.remove('copiado');
+      }, 2000);
+    } else {
+      mostrarErro('Não foi possível copiar automaticamente. Selecione e copie manualmente.');
+    }
+  }
+
+  btnCopiar.addEventListener('click', copiarRanking);
 
   async function carregar() {
     try {
